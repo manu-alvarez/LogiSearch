@@ -20,10 +20,12 @@ import {
   TrendingUp as TrendIcon,
   Gavel as GavelIcon,
   Warning as WarningIcon,
+  School as ExpertIcon,
+  AutoAwesome as SparklesIcon,
 } from '@mui/icons-material'
 import { motion } from 'framer-motion'
 import { alpha } from '@mui/material/styles'
-import CostCalculator from './CostCalculator'
+import ReactMarkdown from 'react-markdown'
 
 // Motion-wrapped MUI components
 const MotionCard = motion.create(Card)
@@ -42,6 +44,7 @@ interface ResultsViewProps {
       customsData: Record<string, unknown> | null
     }
     rfq: string | null
+    expertData: string | null
   }
 }
 
@@ -94,6 +97,42 @@ export default function ResultsView({ origin, destination, mode, onGenerateRFQ, 
   const routeRegulations = routeData?.regulations as Record<string, unknown> | null
   const requiredDocs = (routeRegulations?.requiredDocuments as string[]) || (regulations?.requiredDocuments as Array<Record<string, unknown>>) || []
   const applicableRegs = (routeRegulations?.applicableRegulations as string[]) || (regulations?.applicableRegulations as Array<Record<string, unknown>>) || []
+  const expertData = aiResults?.expertData
+
+  if (expertData) {
+    return (
+      <MotionCard
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        sx={{ p: { xs: 2, md: 4 }, position: 'relative', overflow: 'hidden' }}
+      >
+        <Box sx={{ position: 'absolute', top: -50, right: -50, opacity: 0.1, pointerEvents: 'none' }}>
+          <ExpertIcon sx={{ fontSize: 240, color: 'secondary.main' }} />
+        </Box>
+        <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, color: '#A78BFA' }}>
+          <SparklesIcon />
+          Análisis Experto
+        </Typography>
+        <Box sx={{ 
+          fontSize: '1.05rem', 
+          lineHeight: 1.7,
+          color: 'text.primary',
+          '& h1, & h2, & h3': { color: 'white', fontWeight: 600, mt: 4, mb: 2 },
+          '& h1': { fontSize: '1.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 1 },
+          '& h2': { fontSize: '1.4rem' },
+          '& h3': { fontSize: '1.2rem', color: '#A78BFA' },
+          '& p': { mb: 2 },
+          '& ul, & ol': { pl: 3, mb: 2 },
+          '& li': { mb: 1, '&::marker': { color: 'secondary.main' } },
+          '& strong': { color: 'white', fontWeight: 700 },
+          '& code': { bgcolor: 'rgba(255,255,255,0.1)', px: 1, py: 0.2, borderRadius: 1, fontFamily: 'monospace', fontSize: '0.9em' },
+          '& a': { color: '#00E5FF', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } },
+        }}>
+          <ReactMarkdown>{expertData}</ReactMarkdown>
+        </Box>
+      </MotionCard>
+    )
+  }
 
   return (
     <Stack spacing={2.5}>
@@ -517,9 +556,6 @@ export default function ResultsView({ origin, destination, mode, onGenerateRFQ, 
           )}
         </CardContent>
       </MotionCard>
-
-      {/* ─── Cost Calculator ─── */}
-      <CostCalculator defaultMode={mode} />
 
       {/* ─── Actions ─── */}
       <MotionCard custom={11} initial="hidden" animate="visible" variants={cardVariants} sx={{ p: 0 }}>

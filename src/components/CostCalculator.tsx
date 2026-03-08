@@ -61,7 +61,26 @@ export default function CostCalculator({ defaultMode = 'mar' }: CostCalculatorPr
         surcharges: { name: string; amount: number }[]
         total: number
         perUnit: string
+        suggestedCarriers: { name: string; website: string; phone: string }[]
     } | null>(null)
+
+    const CARRIER_DB = {
+        mar: [
+            { name: 'Maersk Line', website: 'https://www.maersk.com', phone: '+34 902 284 828' },
+            { name: 'MSC', website: 'https://www.msc.com', phone: '+34 963 359 100' },
+            { name: 'CMA CGM', website: 'https://www.cma-cgm.com', phone: '+34 934 956 200' },
+        ],
+        aire: [
+            { name: 'DHL Aviation', website: 'https://www.dhl.com', phone: '+34 902 122 424' },
+            { name: 'FedEx Express', website: 'https://www.fedex.com', phone: '+34 915 209 060' },
+            { name: 'Lufthansa Cargo', website: 'https://lufthansa-cargo.com', phone: '+34 917 482 100' },
+        ],
+        tierra: [
+            { name: 'DB Schenker', website: 'https://www.dbschenker.com', phone: '+34 911 313 000' },
+            { name: 'DSV', website: 'https://www.dsv.com', phone: '+34 934 797 200' },
+            { name: 'XPO Logistics', website: 'https://www.xpo.com', phone: '+34 902 102 102' },
+        ]
+    }
 
     const handleCalculate = () => {
         const rates = BASE_RATES[mode as keyof typeof BASE_RATES]
@@ -112,6 +131,7 @@ export default function CostCalculator({ defaultMode = 'mar' }: CostCalculatorPr
             surcharges: applicableSurcharges,
             total,
             perUnit: rateConfig.unit,
+            suggestedCarriers: CARRIER_DB[mode as keyof typeof CARRIER_DB]
         })
         setCalculated(true)
     }
@@ -300,8 +320,8 @@ export default function CostCalculator({ defaultMode = 'mar' }: CostCalculatorPr
                                         p: 2,
                                         borderRadius: 2,
                                         border: '2px solid',
-                                        borderColor: alpha('#00B4D8', 0.4),
-                                        bgcolor: alpha('#00B4D8', 0.06),
+                                        borderColor: alpha('#00E5FF', 0.5),
+                                        bgcolor: alpha('#00E5FF', 0.08),
                                         textAlign: 'center',
                                     }}
                                 >
@@ -311,7 +331,7 @@ export default function CostCalculator({ defaultMode = 'mar' }: CostCalculatorPr
                                     <Typography
                                         variant="h4"
                                         sx={{
-                                            background: 'linear-gradient(135deg, #00B4D8, #48CAE4)',
+                                            background: 'linear-gradient(135deg, #00E5FF, #99F6FF)',
                                             WebkitBackgroundClip: 'text',
                                             WebkitTextFillColor: 'transparent',
                                             fontWeight: 800,
@@ -327,6 +347,40 @@ export default function CostCalculator({ defaultMode = 'mar' }: CostCalculatorPr
                                         variant="outlined"
                                         sx={{ mt: 1 }}
                                     />
+                                </Box>
+                            </Grid>
+
+                            {/* Suggested Carriers */}
+                            <Grid size={{ xs: 12 }}>
+                                <Box sx={{ mt: 2, p: 2, bgcolor: 'rgba(255,255,255,0.02)', borderRadius: 2, border: '1px solid', borderColor: 'divider' }}>
+                                    <Typography variant="overline" sx={{ color: 'text.disabled', display: 'block', mb: 1.5 }}>
+                                        Operadores recomendados en esta ruta
+                                    </Typography>
+                                    <Grid container spacing={2}>
+                                        {result.suggestedCarriers.map((carrier, idx) => (
+                                            <Grid key={idx} size={{ xs: 12, sm: 4 }}>
+                                                <Card sx={{ p: 1.5, bgcolor: 'rgba(0,0,0,0.5)', border: '1px solid', borderColor: 'rgba(255,255,255,0.1)' }}>
+                                                    <Typography sx={{ fontWeight: 700, color: 'white', mb: 0.5, fontSize: '0.9rem' }}>
+                                                        {carrier.name}
+                                                    </Typography>
+                                                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
+                                                        <Button
+                                                            size="small"
+                                                            variant="text"
+                                                            href={carrier.website}
+                                                            target="_blank"
+                                                            sx={{ justifyContent: 'flex-start', p: 0, minWidth: 0, fontSize: '0.75rem', color: '#00E5FF' }}
+                                                        >
+                                                            {carrier.website.replace('https://www.', '')}
+                                                        </Button>
+                                                        <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                                                            {carrier.phone}
+                                                        </Typography>
+                                                    </Box>
+                                                </Card>
+                                            </Grid>
+                                        ))}
+                                    </Grid>
                                 </Box>
                             </Grid>
                         </Grid>

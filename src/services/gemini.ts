@@ -82,11 +82,16 @@ Provide ONLY valid JSON (no markdown):
     "strengths": ["strength 1", "strength 2"],
     "weaknesses": ["weakness 1"],
     "services": ["service 1", "service 2"],
-    "recommended": true/false
+    "recommended": true/false,
+    "contact": {
+      "phone": "Real phone number string",
+      "email": "Real or likely email (e.g. info@carrier.com)",
+      "website": "Real official URL (e.g. https://www.carrier.com)"
+    }
   }
 ]
 
-Return exactly 5 carriers. Use real company data.
+Return exactly 5 carriers. Use real company data. It is CRITICAL that you provide realistic contact information (phone, email, website) for each carrier.
 IMPORTANT: All text values (transitTime, strengths, weaknesses, services) MUST be in Spanish (Castellano).
 `
   const result = await sendToGemini(prompt)
@@ -183,10 +188,10 @@ Provide ONLY valid JSON (no markdown):
   "shipmentType": "national" or "international",
   "customsRequired": true/false,
   "requiredDocuments": [
-    { "name": "document name", "mandatory": true/false, "description": "brief description" }
+    { "name": "document name", "mandatory": true/false, "description": "brief description", "officialUrl": "Real URL to official source or template" }
   ],
   "applicableRegulations": [
-    { "name": "regulation name", "reference": "official reference number", "description": "brief description" }
+    { "name": "regulation name", "reference": "official reference number", "description": "brief description", "officialUrl": "Real URL to BOE, EUR-Lex, etc." }
   ],
   "duties": {
     "estimatedDutyRate": "percentage or range",
@@ -197,8 +202,29 @@ Provide ONLY valid JSON (no markdown):
   "specialRequirements": ["requirement if any"],
   "estimatedCustomsClearanceTime": "estimated time"
 }
+IMPORTANT: Provide REAL URLs (officialUrl) pointing to official government/administration websites whenever possible.
 IMPORTANT: All text values MUST be in Spanish (Castellano).
 `
   const result = await sendToGemini(prompt)
   return parseGeminiJSON(result)
+}
+
+// Ask LogiSearch Expert (General Open Query)
+export async function askExpert(query: string) {
+  const prompt = `
+You are LogiSearch AI, an elite logistics, freight, and international trade expert.
+A user is asking you a direct question: "${query}"
+
+Respond as a highly knowledgeable consultant.
+Your answer MUST:
+1. Be directly answering the user's question with deep expertise.
+2. Include concrete facts, official regulations, realistic timelines, or current industry prices.
+3. INCLUDE LINKS: Provide real URLs to official documentation (e.g. BOE, Customs, Carrier sites, Trade Associations) formatted in standard markdown.
+4. If applicable, mention real carrier names or contacts.
+5. Provide a well-structured Markdown response (use headings, bold text, lists).
+
+IMPORTANT: Respond entirely in Spanish (Castellano). Make your response rich, helpful, and highly professional.
+`
+  // Return raw string (not JSON)
+  return sendToGemini(prompt)
 }

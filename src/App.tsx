@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react'
 import {
   AppBar, Toolbar, Container, Box, Typography, TextField, Button,
   Chip, Card, Snackbar, Alert, Tooltip,
-  Stepper, Step, StepLabel, Stack, Fade,
+  Stepper, Step, StepLabel, Stack, Fade, Tabs, Tab,
 } from '@mui/material'
 import {
   Anchor as AnchorIcon,
@@ -18,14 +18,16 @@ import {
   History as HistoryIcon,
   LocalShipping as TruckIcon,
   Gavel as GavelIcon,
+  School as ExpertIcon,
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import ResultsView from './components/ResultsView'
 import RfqDialog from './components/RfqDialog'
 import SearchHistory from './components/SearchHistory'
+import CostCalculator from './components/CostCalculator'
 import { saveSearch, saveRFQ } from './lib/supabase'
 import { searchFreightRates, searchCustomsRequirements } from './services/tavily'
-import { analyzeRoute, compareCarriers, generateCustomRFQ, analyzeRegulations } from './services/gemini'
+import { analyzeRoute, compareCarriers, generateCustomRFQ, analyzeRegulations, askExpert } from './services/gemini'
 
 // Motion-wrapped MUI components
 const MotionBox = motion.create(Box)
@@ -107,10 +109,12 @@ interface SearchResults {
     customsData: Record<string, unknown> | null
   }
   rfq: string | null
+  expertData: string | null
 }
 
 function App() {
   const [query, setQuery] = useState('')
+  const [searchMode, setSearchMode] = useState<'route' | 'expert'>('route')
   const [isLoading, setIsLoading] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
   const [hasSearched, setHasSearched] = useState(false)
@@ -134,68 +138,90 @@ function App() {
     const { origin, destination, mode } = parseQuery(query)
 
     try {
-      // Step 1: Parse query (instant)
-      setActiveStep(1)
+      if (searchMode === 'expert') {
+        setActiveStep(2)
+        const expertResult = await askExpert(query)
+        setActiveStep(4)
 
-      // Steps 2-4: Parallel API calls (route, freight, customs, regulations, carriers)
-      const [routeResult, freightResult, customsResult, regulationsResult, carriersResult] = await Promise.allSettled([
-        analyzeRoute(origin, destination, mode, query),
-        searchFreightRates(origin, destination, mode),
-        searchCustomsRequirements(origin, destination),
-        analyzeRegulations(origin, destination),
-        compareCarriers(origin, destination, mode),
-      ])
-      setActiveStep(4)
-
-      // Step 5: Generate RFQ (also wrapped to not crash on failure)
-      let rfqText: string | null = null
-      try {
-        rfqText = await generateCustomRFQ(origin, destination, mode, query)
-      } catch {
-        console.warn('RFQ generation failed, continuing with other results')
-      }
-      setActiveStep(5)
-
-      // Extract results (handle failures gracefully)
-      const routeAnalysis = routeResult.status === 'fulfilled' ? routeResult.value : null
-      const freightData = freightResult.status === 'fulfilled' ? freightResult.value : null
-      const customsData = customsResult.status === 'fulfilled' ? customsResult.value : null
-      const regulations = regulationsResult.status === 'fulfilled' ? regulationsResult.value : null
-      const carriers = carriersResult.status === 'fulfilled' ? carriersResult.value : null
-
-      // Count failures for user feedback
-      const failedApis = [routeResult, freightResult, customsResult, regulationsResult, carriersResult]
-        .filter(r => r.status === 'rejected').length
-      const hasAnyData = routeAnalysis || freightData || customsData || regulations || carriers || rfqText
-
-      if (!hasAnyData) {
-        setError('No se pudieron obtener datos. Las APIs podrían estar saturadas. Inténtalo de nuevo en unos segundos.')
-      } else if (failedApis > 0) {
-        setError(`${failedApis} de 5 fuentes no respondieron. Los resultados pueden estar incompletos.`)
-      }
-
-      // Save to Supabase (non-blocking)
-      saveSearch({
-        origin,
-        destination,
-        transport_mode: mode,
-        results: { routeAnalysis, freightData, customsData, regulations, carriers },
-      }).then((saved) => {
-        setSavedToDB(true)
-        if (saved?.id) setLastSearchId(saved.id)
-      }).catch(() => { /* silently fail */ })
-
-      setSearchResults({
-        route: routeAnalysis,
-        carriers: carriers || [],
-        regulations,
-        webData: { freightData: freightData as unknown as Record<string, unknown> | null, customsData: customsData as unknown as Record<string, unknown> | null },
-        rfq: rfqText,
-      })
-
-      // Show results even with partial data
-      if (hasAnyData) {
+        setSearchResults({
+          route: null, carriers: [], regulations: null, webData: { freightData: null, customsData: null }, rfq: null,
+          expertData: expertResult
+        })
         setHasSearched(true)
+        
+        saveSearch({
+          origin: 'N/A', destination: 'N/A', transport_mode: 'expert' as any,
+          results: { expertData: expertResult },
+        }).then((saved) => {
+          setSavedToDB(true)
+          if (saved?.id) setLastSearchId(saved.id)
+        }).catch(() => { /* silently fail */ })
+
+      } else {
+        // Step 1: Parse query (instant)
+        setActiveStep(1)
+
+        // Steps 2-4: Parallel API calls (route, freight, customs, regulations, carriers)
+        const [routeResult, freightResult, customsResult, regulationsResult, carriersResult] = await Promise.allSettled([
+          analyzeRoute(origin, destination, mode, query),
+          searchFreightRates(origin, destination, mode),
+          searchCustomsRequirements(origin, destination),
+          analyzeRegulations(origin, destination),
+          compareCarriers(origin, destination, mode),
+        ])
+        setActiveStep(4)
+
+        // Step 5: Generate RFQ (also wrapped to not crash on failure)
+        let rfqText: string | null = null
+        try {
+          rfqText = await generateCustomRFQ(origin, destination, mode, query)
+        } catch {
+          console.warn('RFQ generation failed, continuing with other results')
+        }
+        setActiveStep(5)
+
+        // Extract results (handle failures gracefully)
+        const routeAnalysis = routeResult.status === 'fulfilled' ? routeResult.value : null
+        const freightData = freightResult.status === 'fulfilled' ? freightResult.value : null
+        const customsData = customsResult.status === 'fulfilled' ? customsResult.value : null
+        const regulations = regulationsResult.status === 'fulfilled' ? regulationsResult.value : null
+        const carriers = carriersResult.status === 'fulfilled' ? carriersResult.value : null
+
+        // Count failures for user feedback
+        const failedApis = [routeResult, freightResult, customsResult, regulationsResult, carriersResult]
+          .filter(r => r.status === 'rejected').length
+        const hasAnyData = routeAnalysis || freightData || customsData || regulations || carriers || rfqText
+
+        if (!hasAnyData) {
+          setError('No se pudieron obtener datos. Las APIs podrían estar saturadas. Inténtalo de nuevo en unos segundos.')
+        } else if (failedApis > 0) {
+          setError(`${failedApis} de 5 fuentes no respondieron. Los resultados pueden estar incompletos.`)
+        }
+
+        // Save to Supabase (non-blocking)
+        saveSearch({
+          origin,
+          destination,
+          transport_mode: mode,
+          results: { routeAnalysis, freightData, customsData, regulations, carriers },
+        }).then((saved) => {
+          setSavedToDB(true)
+          if (saved?.id) setLastSearchId(saved.id)
+        }).catch(() => { /* silently fail */ })
+
+        setSearchResults({
+          route: routeAnalysis,
+          carriers: carriers || [],
+          regulations,
+          webData: { freightData: freightData as unknown as Record<string, unknown> | null, customsData: customsData as unknown as Record<string, unknown> | null },
+          rfq: rfqText,
+          expertData: null,
+        })
+
+        // Show results even with partial data
+        if (hasAnyData) {
+          setHasSearched(true)
+        }
       }
     } catch (err) {
       console.error('Search error:', err)
@@ -330,30 +356,60 @@ function App() {
                   sx={{
                     width: '100%',
                     maxWidth: 720,
-                    p: 0.5,
+                    p: 0,
                     border: '1px solid',
                     borderColor: isLoading ? 'primary.main' : 'divider',
                     transition: 'border-color 0.3s',
+                    overflow: 'hidden'
                   }}
                   className={isLoading ? 'pulse-glow' : ''}
                 >
-                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                  <Tabs 
+                    value={searchMode} 
+                    onChange={(_, v) => setSearchMode(v)} 
+                    variant="fullWidth"
+                    sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
+                  >
+                    <Tab 
+                      icon={<ShipIcon sx={{ fontSize: 18 }} />} 
+                      iconPosition="start" 
+                      label="Ruta Logística" 
+                      value="route" 
+                    />
+                    <Tab 
+                      icon={<ExpertIcon sx={{ fontSize: 18 }} />} 
+                      iconPosition="start" 
+                      label="Consulta Experta" 
+                      value="expert" 
+                    />
+                  </Tabs>
+                  
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
                     <Box
                       sx={{
                         width: 48, height: 48, borderRadius: 2.5,
-                        bgcolor: 'rgba(0, 180, 216, 0.12)',
+                        bgcolor: searchMode === 'route' ? 'rgba(0, 229, 255, 0.12)' : 'rgba(139, 92, 246, 0.12)',
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0, ml: 1,
+                        transition: 'all 0.3s'
                       }}
                     >
-                      <SparklesIcon sx={{ color: 'primary.main' }} />
+                      {searchMode === 'route' ? (
+                        <SparklesIcon sx={{ color: 'primary.main' }} />
+                      ) : (
+                        <ExpertIcon sx={{ color: 'secondary.main' }} />
+                      )}
                     </Box>
                     <TextField
                       fullWidth
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
-                      placeholder="Ej: Madrid a Barcelona terrestre, Shanghai a Valencia marítimo..."
+                      placeholder={
+                        searchMode === 'route' 
+                          ? "Ej: Madrid a Barcelona terrestre..." 
+                          : "Consulta leyes, tiempos aduaneros, navieras..."
+                      }
                       disabled={isLoading}
                       variant="standard"
                       InputProps={{
@@ -365,10 +421,18 @@ function App() {
                       variant="contained"
                       onClick={handleSearch}
                       disabled={isLoading || !query.trim()}
-                      sx={{ minWidth: 120, py: 1.5 }}
+                      sx={{ 
+                        minWidth: 120, 
+                        py: 1.5,
+                        ...(searchMode === 'expert' && {
+                          background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
+                          color: 'white',
+                          '&:hover': { background: 'linear-gradient(135deg, #A78BFA, #8B5CF6)' }
+                        })
+                      }}
                       startIcon={isLoading ? undefined : <SearchIcon />}
                     >
-                      {isLoading ? 'Buscando...' : 'Buscar'}
+                      {isLoading ? '...' : searchMode === 'route' ? 'Cotizar' : 'Consultar'}
                     </Button>
                   </Box>
                 </Card>
@@ -463,6 +527,19 @@ function App() {
                       </MotionBox>
                     ))}
                   </Box>
+                )}
+
+                {/* Integration of Cost Calculator on Home Screen below features */}
+                {!isLoading && (
+                  <MotionBox
+                    key="home-calculator"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.5, duration: 0.4 }}
+                    sx={{ width: '100%', mt: 4 }}
+                  >
+                     <CostCalculator defaultMode="mar" />
+                  </MotionBox>
                 )}
               </Stack>
             </MotionBox>

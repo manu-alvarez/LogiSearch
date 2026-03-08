@@ -7,24 +7,24 @@ const theme = createTheme({
     palette: {
         mode: 'dark',
         primary: {
-            main: '#00B4D8',
-            light: '#48CAE4',
-            dark: '#0096C7',
-            contrastText: '#ffffff',
+            main: '#00E5FF',     // Cyan más brillante y luminoso
+            light: '#99F6FF',
+            dark: '#00B8D4',
+            contrastText: '#000000', // Texto oscuro sobre botones cyan para max legibilidad
         },
         secondary: {
-            main: '#7C3AED',
+            main: '#8B5CF6',
             light: '#A78BFA',
-            dark: '#5B21B6',
+            dark: '#6D28D9',
         },
         background: {
-            default: '#00101F',
-            paper: '#001A33',
+            default: '#050505',  // Casi negro absoluto (Deep Black)
+            paper: '#0C0C0C',    // Tarjetas muy oscuras para separar del fondo
         },
         surface: {
-            main: '#002147',
-            light: '#1a3a5c',
-            dark: '#00152e',
+            main: '#121212',
+            light: '#1e1e1e',
+            dark: '#000000',
         },
         success: {
             main: '#10B981',
@@ -42,11 +42,11 @@ const theme = createTheme({
             dark: '#DC2626',
         },
         text: {
-            primary: '#F1F5F9',
-            secondary: '#94A3B8',
-            disabled: '#475569',
+            primary: '#FFFFFF',  // Blanco puro para data clave
+            secondary: '#A1A1AA', // Zinc 400 luminoso pero sutil
+            disabled: '#52525B', // Zinc 600
         },
-        divider: 'rgba(255, 255, 255, 0.08)',
+        divider: 'rgba(255, 255, 255, 0.1)',
         action: {
             hover: 'rgba(0, 180, 216, 0.08)',
             selected: 'rgba(0, 180, 216, 0.16)',
@@ -165,9 +165,9 @@ const theme = createTheme({
                 body: {
                     minHeight: '100vh',
                     backgroundImage: `
-            radial-gradient(circle at 20% 50%, rgba(0, 180, 216, 0.06) 0%, transparent 50%),
-            radial-gradient(circle at 80% 20%, rgba(0, 180, 216, 0.04) 0%, transparent 40%),
-            linear-gradient(180deg, #00101F 0%, #000A14 100%)
+            radial-gradient(circle at 10% 20%, rgba(0, 229, 255, 0.04) 0%, transparent 40%),
+            radial-gradient(circle at 90% 80%, rgba(139, 92, 246, 0.03) 0%, transparent 40%),
+            linear-gradient(180deg, #050505 0%, #000000 100%)
           `,
                     backgroundAttachment: 'fixed',
                 },
@@ -193,9 +193,9 @@ const theme = createTheme({
             },
             styleOverrides: {
                 root: {
-                    background: 'rgba(255, 255, 255, 0.03)',
+                    background: 'rgba(20, 20, 20, 0.6)', // Glassmorphism oscuro
                     backdropFilter: 'blur(20px)',
-                    border: '1px solid rgba(255, 255, 255, 0.08)',
+                    border: '1px solid rgba(255, 255, 255, 0.06)',
                     borderRadius: 16,
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 },
@@ -214,11 +214,12 @@ const theme = createTheme({
                     transition: 'all 0.3s cubic-bezier(0.4, 0, 0.2, 1)',
                 },
                 containedPrimary: {
-                    background: 'linear-gradient(135deg, #00B4D8, #0096C7)',
+                    background: 'linear-gradient(135deg, #00E5FF, #00B8D4)',
+                    color: '#000000', // Forzar contraste en botones hero
                     '&:hover': {
-                        background: 'linear-gradient(135deg, #48CAE4, #00B4D8)',
+                        background: 'linear-gradient(135deg, #99F6FF, #00E5FF)',
                         transform: 'translateY(-2px)',
-                        boxShadow: '0 10px 30px rgba(0, 180, 216, 0.3)',
+                        boxShadow: '0 10px 30px rgba(0, 229, 255, 0.25)',
                     },
                 },
                 outlinedPrimary: {
@@ -278,9 +279,9 @@ const theme = createTheme({
             },
             styleOverrides: {
                 root: {
-                    background: 'rgba(0, 16, 31, 0.8)',
-                    backdropFilter: 'blur(20px)',
-                    borderBottom: '1px solid rgba(255, 255, 255, 0.08)',
+                    background: 'rgba(5, 5, 5, 0.85)',
+                    backdropFilter: 'blur(24px)',
+                    borderBottom: '1px solid rgba(255, 255, 255, 0.05)',
                 },
             },
         },
