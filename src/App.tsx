@@ -19,6 +19,7 @@ import {
   LocalShipping as TruckIcon,
   Gavel as GavelIcon,
   School as ExpertIcon,
+  Public as GlobeIcon,
 } from '@mui/icons-material'
 import { motion, AnimatePresence } from 'framer-motion'
 import ResultsView from './components/ResultsView'
@@ -27,7 +28,7 @@ import SearchHistory from './components/SearchHistory'
 import CostCalculator from './components/CostCalculator'
 import { saveSearch, saveRFQ } from './lib/supabase'
 import { searchFreightRates, searchCustomsRequirements } from './services/tavily'
-import { analyzeRoute, compareCarriers, generateCustomRFQ, analyzeRegulations, askExpert } from './services/gemini'
+import { analyzeRoute, compareCarriers, generateCustomRFQ, analyzeRegulations, askExpert, askGeneral } from './services/gemini'
 
 // Motion-wrapped MUI components
 const MotionBox = motion.create(Box)
@@ -114,7 +115,7 @@ interface SearchResults {
 
 function App() {
   const [query, setQuery] = useState('')
-  const [searchMode, setSearchMode] = useState<'route' | 'expert'>('route')
+  const [searchMode, setSearchMode] = useState<'route' | 'expert' | 'general'>('route')
   const [isLoading, setIsLoading] = useState(false)
   const [activeStep, setActiveStep] = useState(0)
   const [hasSearched, setHasSearched] = useState(false)
@@ -138,9 +139,9 @@ function App() {
     const { origin, destination, mode } = parseQuery(query)
 
     try {
-      if (searchMode === 'expert') {
+      if (searchMode === 'expert' || searchMode === 'general') {
         setActiveStep(2)
-        const expertResult = await askExpert(query)
+        const expertResult = searchMode === 'expert' ? await askExpert(query) : await askGeneral(query)
         setActiveStep(4)
 
         setSearchResults({
@@ -150,7 +151,7 @@ function App() {
         setHasSearched(true)
         
         saveSearch({
-          origin: 'N/A', destination: 'N/A', transport_mode: 'expert' as any,
+          origin: 'N/A', destination: 'N/A', transport_mode: searchMode as any,
           results: { expertData: expertResult },
         }).then((saved) => {
           setSavedToDB(true)
@@ -382,13 +383,19 @@ function App() {
                       label="Consulta Experta" 
                       value="expert" 
                     />
+                    <Tab 
+                      icon={<GlobeIcon sx={{ fontSize: 18 }} />} 
+                      iconPosition="start" 
+                      label="Búsqueda General" 
+                      value="general" 
+                    />
                   </Tabs>
                   
                   <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, p: 1 }}>
                     <Box
                       sx={{
                         width: 48, height: 48, borderRadius: 2.5,
-                        bgcolor: searchMode === 'route' ? 'rgba(0, 229, 255, 0.12)' : 'rgba(139, 92, 246, 0.12)',
+                        bgcolor: searchMode === 'route' ? 'rgba(0, 229, 255, 0.12)' : (searchMode === 'expert' ? 'rgba(139, 92, 246, 0.12)' : 'rgba(52, 211, 153, 0.12)'),
                         display: 'flex', alignItems: 'center', justifyContent: 'center',
                         flexShrink: 0, ml: 1,
                         transition: 'all 0.3s'
@@ -396,9 +403,11 @@ function App() {
                     >
                       {searchMode === 'route' ? (
                         <SparklesIcon sx={{ color: 'primary.main' }} />
+                      ) : (searchMode === 'expert' ? (
+                        <ExpertIcon sx={{ color: '#A78BFA' }} />
                       ) : (
-                        <ExpertIcon sx={{ color: 'secondary.main' }} />
-                      )}
+                        <GlobeIcon sx={{ color: '#34D399' }} />
+                      ))}
                     </Box>
                     <TextField
                       fullWidth
@@ -408,7 +417,9 @@ function App() {
                       placeholder={
                         searchMode === 'route' 
                           ? "Ej: Madrid a Barcelona terrestre..." 
-                          : "Consulta leyes, tiempos aduaneros, navieras..."
+                          : (searchMode === 'expert' 
+                              ? "Consulta leyes, tiempos aduaneros, navieras..."
+                              : "Haz cualquier otra consulta externa o genérica...")
                       }
                       disabled={isLoading}
                       variant="standard"
@@ -428,6 +439,11 @@ function App() {
                           background: 'linear-gradient(135deg, #8B5CF6, #6D28D9)',
                           color: 'white',
                           '&:hover': { background: 'linear-gradient(135deg, #A78BFA, #8B5CF6)' }
+                        }),
+                        ...(searchMode === 'general' && {
+                          background: 'linear-gradient(135deg, #10B981, #059669)',
+                          color: 'white',
+                          '&:hover': { background: 'linear-gradient(135deg, #34D399, #10B981)' }
                         })
                       }}
                       startIcon={isLoading ? undefined : <SearchIcon />}
@@ -576,6 +592,7 @@ function App() {
                   origin={parsed.origin}
                   destination={parsed.destination}
                   mode={parsed.mode}
+                  searchMode={searchMode}
                   onGenerateRFQ={() => setShowRFQ(true)}
                   aiResults={searchResults ?? undefined}
                 />

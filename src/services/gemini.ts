@@ -229,3 +229,17 @@ IMPORTANT: Respond entirely in Spanish (Castellano). Make your response rich, he
   // Return raw string (not JSON)
   return sendToGemini(prompt)
 }
+
+// Ask LogiSearch General Assistant (Unrestricted)
+export async function askGeneral(query: string) {
+  const prompt = `
+You are LogiSearch AI, a highly capable assistant.
+A user is asking you a general question: "${query}"
+
+Respond helpfully and intelligently to the user. You are NOT restricted to logistics in this mode.
+You can answer any question. 
+If applicable, include facts, links, and structure your answer in standard Markdown.
+IMPORTANT: Respond entirely in Spanish (Castellano). Make your response helpful and polite.
+`
+  return sendToGemini(prompt)
+}

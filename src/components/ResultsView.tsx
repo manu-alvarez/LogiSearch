@@ -34,6 +34,7 @@ interface ResultsViewProps {
   origin: string
   destination: string
   mode: string
+  searchMode?: 'route' | 'expert' | 'general'
   onGenerateRFQ: () => void
   aiResults?: {
     route: Record<string, unknown> | null
@@ -81,7 +82,7 @@ const cardVariants = {
   }),
 }
 
-export default function ResultsView({ origin, destination, mode, onGenerateRFQ, aiResults }: ResultsViewProps) {
+export default function ResultsView({ origin, destination, mode, searchMode = 'expert', onGenerateRFQ, aiResults }: ResultsViewProps) {
   const modeConfig = MODE_CONFIG[mode] || MODE_CONFIG.mar
   const ModeIcon = modeConfig.icon
 
@@ -100,6 +101,12 @@ export default function ResultsView({ origin, destination, mode, onGenerateRFQ, 
   const expertData = aiResults?.expertData
 
   if (expertData) {
+    const isExpert = searchMode === 'expert'
+    const TitleIcon = isExpert ? SparklesIcon : GlobeIcon
+    const BgIcon = isExpert ? ExpertIcon : GlobeIcon
+    const titleText = isExpert ? 'Análisis Experto' : 'Respuesta General'
+    const primaryColor = isExpert ? '#A78BFA' : '#34D399'
+
     return (
       <MotionCard
         initial={{ opacity: 0, y: 20 }}
@@ -107,11 +114,11 @@ export default function ResultsView({ origin, destination, mode, onGenerateRFQ, 
         sx={{ p: { xs: 2, md: 4 }, position: 'relative', overflow: 'hidden' }}
       >
         <Box sx={{ position: 'absolute', top: -50, right: -50, opacity: 0.1, pointerEvents: 'none' }}>
-          <ExpertIcon sx={{ fontSize: 240, color: 'secondary.main' }} />
+          <BgIcon sx={{ fontSize: 240, color: 'secondary.main' }} />
         </Box>
-        <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, color: '#A78BFA' }}>
-          <SparklesIcon />
-          Análisis Experto
+        <Typography variant="h5" sx={{ mb: 3, display: 'flex', alignItems: 'center', gap: 1.5, color: primaryColor }}>
+          <TitleIcon />
+          {titleText}
         </Typography>
         <Box sx={{ 
           fontSize: '1.05rem', 
@@ -120,10 +127,10 @@ export default function ResultsView({ origin, destination, mode, onGenerateRFQ, 
           '& h1, & h2, & h3': { color: 'white', fontWeight: 600, mt: 4, mb: 2 },
           '& h1': { fontSize: '1.75rem', borderBottom: '1px solid rgba(255,255,255,0.1)', pb: 1 },
           '& h2': { fontSize: '1.4rem' },
-          '& h3': { fontSize: '1.2rem', color: '#A78BFA' },
+          '& h3': { fontSize: '1.2rem', color: primaryColor },
           '& p': { mb: 2 },
           '& ul, & ol': { pl: 3, mb: 2 },
-          '& li': { mb: 1, '&::marker': { color: 'secondary.main' } },
+          '& li': { mb: 1, '&::marker': { color: isExpert ? 'secondary.main' : '#34D399' } },
           '& strong': { color: 'white', fontWeight: 700 },
           '& code': { bgcolor: 'rgba(255,255,255,0.1)', px: 1, py: 0.2, borderRadius: 1, fontFamily: 'monospace', fontSize: '0.9em' },
           '& a': { color: '#00E5FF', textDecoration: 'none', '&:hover': { textDecoration: 'underline' } },
