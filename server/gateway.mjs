@@ -1,9 +1,10 @@
 // Framework-independent HTTP gateway. Authentication is mandatory.
-export function createGateway({ providers, authenticate, allowedOrigin, requestsPerMinute = 20, maxActive = 4 } = {}) {
+export function createGateway({ providers, authenticate, allowedOrigin, requestsPerMinute = 20, globalRequestsPerMinute = 120, maxActive = 4 } = {}) {
   if (typeof authenticate !== 'function' || !providers || !allowedOrigin) throw new Error('Gateway configuration required');
-  if (!Number.isInteger(requestsPerMinute) || requestsPerMinute < 1 || !Number.isInteger(maxActive) || maxActive < 1) throw new Error('Invalid limits');
+  if (!Number.isInteger(globalRequestsPerMinute) || globalRequestsPerMinute < 1 || !Number.isInteger(requestsPerMinute) || requestsPerMinute < 1 || !Number.isInteger(maxActive) || maxActive < 1) throw new Error('Invalid limits');
   const quotas = new Map();
   let active = 0;
+  let globalQuota = { count: 0, until: 0 };
   const json = (status, data, extra = {}) => Response.json(data, { status, headers: { 'Cache-Control': 'no-store', 'X-Content-Type-Options': 'nosniff', ...extra } });
   return async function handle(request) {
     const path = new URL(request.url).pathname;
@@ -46,6 +47,10 @@ export function createGateway({ providers, authenticate, allowedOrigin, requests
     const count = body.maxResults ?? 5;
     if (typeof input !== 'string' || !input.trim() || input.length > (generate ? 50000 : 4000) || (!generate && (!Number.isInteger(count) || count < 1 || count > 20))) return json(400, { error: 'Invalid input' });
     if (active >= maxActive) return json(503, { error: 'Gateway busy' }, { 'Retry-After': '5' });
+    const dispatchTime = Date.now();
+    if (globalQuota.until <= dispatchTime) globalQuota = { count: 0, until: dispatchTime + 60000 };
+    if (globalQuota.count >= globalRequestsPerMinute) return json(429, { error: 'Rate limit exceeded' }, { 'Retry-After': String(Math.ceil((globalQuota.until - dispatchTime) / 1000)) });
+    globalQuota.count++;
     active++;
     try {
       return json(200, generate ? { text: await providers.generate(input) } : await providers.search(input, count));

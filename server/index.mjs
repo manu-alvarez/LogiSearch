@@ -11,6 +11,7 @@ const handle = createGateway({
   providers: createProviderService(),
   authenticate: createSupabaseAuthenticator({ url: process.env.SUPABASE_URL, publicKey: process.env.SUPABASE_ANON_KEY }),
   allowedOrigin: origin.origin,
+  globalRequestsPerMinute: Number(process.env.GATEWAY_GLOBAL_REQUESTS_PER_MINUTE || '120'),
 });
 const server = createHttpServer({ handle, origin: origin.origin });
 server.listen(port, '127.0.0.1', () => console.log('LogiSearch gateway listening on loopback port ' + port));

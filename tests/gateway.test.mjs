@@ -36,3 +36,18 @@ test('gateway never reflects provider errors', async () => {
   assert.equal(response.status, 502);
   assert.equal((await response.text()).includes('private upstream data'), false);
 });
+
+test('global provider quota cannot be bypassed by changing verified identities', async () => {
+  let calls = 0;
+  const app = createGateway({ allowedOrigin: 'https://example.org', globalRequestsPerMinute: 2,
+    authenticate: async r => r.headers.get('authorization') || null,
+    providers: { generate: async () => { calls++; return 'ok'; }, search: async () => { calls++; return { results: [] }; } } });
+  const post = (id, path, body) => app(new Request('https://example.org'+path, {method:'POST', headers:{'content-type':'application/json',authorization:id},body:JSON.stringify(body)}));
+  assert.equal((await post('a','/api/ai/generate',{prompt:''})).status,400);
+  assert.equal((await post('a','/api/ai/generate',{prompt:'one'})).status,200);
+  assert.equal((await post('b','/api/search',{query:'two'})).status,200);
+  const denied = await post('c','/api/ai/generate',{prompt:'three'});
+  assert.equal(denied.status,429);
+  assert.ok(Number(denied.headers.get('retry-after')) > 0);
+  assert.equal(calls,2);
+});
