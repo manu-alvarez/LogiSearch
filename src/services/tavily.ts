@@ -1,6 +1,6 @@
 // Web Search Service — Tavily API
 // Provides real-time web data for logistics queries
-import { TAVILY_API_KEY } from '../lib/supabase'
+import { gatewayRequest } from './gatewayClient'
 
 interface TavilyResult {
   title: string
@@ -18,24 +18,7 @@ interface TavilyResponse {
 // Core search function
 export async function searchWeb(query: string, maxResults: number = 5): Promise<TavilyResponse> {
   try {
-    const response = await fetch('https://api.tavily.com/search', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        api_key: TAVILY_API_KEY,
-        query,
-        max_results: maxResults,
-        include_answer: true,
-        include_raw_content: false,
-        include_images: false,
-      }),
-    })
-
-    if (!response.ok) {
-      throw new Error(`Tavily API error: ${response.status}`)
-    }
-
-    return await response.json()
+    return await gatewayRequest<TavilyResponse>('/api/search', { query, maxResults })
   } catch (error) {
     console.error('Web search error:', error)
     return { results: [], related_queries: [] }
