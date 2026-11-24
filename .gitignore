@@ -31,3 +31,6 @@ dist-ssr
 /dev-dist/
 /dist.tar.gz
 !.env.example
+/server.env
+/server.env.*
+!/server.env.example

@@ -49,8 +49,6 @@ Crea un archivo `.env` en la raíz del proyecto:
 ```env
 VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu-anon-key
-VITE_TAVILY_API_KEY=tu-tavily-key
-VITE_GEMINI_API_KEY=tu-gemini-key
 ```
 
 > ⚠️ **Nunca** incluyas la service key de Supabase en el frontend. Las claves Gemini y Tavily configuradas aquí quedan expuestas al navegador; no publicar builds que las contengan.
@@ -111,3 +109,6 @@ src/
 ## 📄 Licencia
 
 Repositorio público — Todos los derechos reservados © 2026
+
+## Server-side AI and search gateway
+See [gateway setup](docs/GATEWAY.md) and `server.env.example`. Provider credentials belong only in the server environment. The candidate frontend requires a verified Supabase session and a same-origin gateway; validate public access and abuse controls before production rollout.

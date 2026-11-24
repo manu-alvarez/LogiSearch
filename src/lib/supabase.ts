@@ -106,6 +106,3 @@ export async function saveRFQ(rfq: Omit<RFQ, 'id' | 'created_at'>): Promise<RFQ 
   }
 }
 
-// API keys from environment variables
-// Note: Gemini keys are managed by aiProvider.ts (rotation + fallback)
-export const TAVILY_API_KEY = import.meta.env.VITE_TAVILY_API_KEY || ''

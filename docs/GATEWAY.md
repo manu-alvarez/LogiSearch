@@ -1,0 +1,11 @@
+# Gateway integration
+Run with Node.js 22: node --env-file=/private/path/logisearch.env server/index.mjs.
+The service binds to loopback by default. Route /api/ai/generate and /api/search through the existing same-origin reverse proxy. Do not expose the listening port directly. GET /healthz verifies process liveness only.
+Supply existing credentials privately using server.env.example as a variable-name reference. Never commit values. Supabase service role is only needed for the initialization script, not the running gateway.
+POST /api/ai/generate accepts {prompt}; POST /api/search accepts {query,maxResults}. Both require a valid Supabase user access token. Candidate frontend now uses the same-origin gateway and restores existing Supabase sessions or requests anonymous sign-in. Anonymous sign-in must be explicitly enabled and protected by verified abuse controls before rollout. Do not switch production until session provisioning, access policy, RLS, provider availability, proxy timeouts, and end-to-end functionality are verified. Public access requires a separately validated bounded anonymous-session policy; do not bypass authentication.
+The gateway uses single-process quotas. Apply upstream request limits before authentication, and shared quotas for multiple replicas. Review provider retry deadlines and configure reverse proxy limits before activation. Previously exposed secrets remain at risk until rotated; no rotation is performed here.
+Use a staging origin for integration checks; do not deploy this branch to production until anonymous access, CAPTCHA/abuse protections, RLS and all features are validated. No direct provider fallback in the browser.
+
+## Container network
+
+Default binding is `127.0.0.1`. For an isolated gateway container behind a trusted same-origin reverse proxy, set `GATEWAY_BIND_HOST=0.0.0.0` and do not publish the gateway port. Route only the gateway API paths to it. Supply the Supabase URL and public key and the existing provider credentials via a private runtime environment, never through the frontend build. The Supabase initialization script requires separate credentials; do not pass service-role credentials to the gateway. Validate auth, provider fallback, quotas and search with the real deployment before switching traffic. Keep the existing deployment intact until acceptance.
