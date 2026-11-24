@@ -4,8 +4,8 @@
 import { createClient } from '@supabase/supabase-js'
 
 const supabaseUrl = 'https://ujktxhqxhxkbrhczbhcf.supabase.co'
-const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InVqa3R4aHF4aGticmhjemJoY2YiLCJyb2xlIjoic2VydmljZV9yb2xlIiwiaWF0IjoxNzQ1OTM0MDY2LCJleHAiOjIwNjE1MTAwNjZ9.NN2UWWtaZJ2f0Y1awR9z3Rqu0c1l5KZHJ9Yw1R5P-UE'
-
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY
+if (!serviceKey) throw new Error('SUPABASE_SERVICE_ROLE_KEY is required')
 const supabase = createClient(supabaseUrl, serviceKey)
 
 async function createTables() {

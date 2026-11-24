@@ -13,6 +13,8 @@ const handle = createGateway({
   allowedOrigin: origin.origin,
   globalRequestsPerMinute: Number(process.env.GATEWAY_GLOBAL_REQUESTS_PER_MINUTE || '120'),
 });
+const host = process.env.GATEWAY_BIND_HOST || '127.0.0.1';
+if (!['127.0.0.1', '0.0.0.0'].includes(host)) throw new Error('Invalid GATEWAY_BIND_HOST');
 const server = createHttpServer({ handle, origin: origin.origin });
-server.listen(port, '127.0.0.1', () => console.log('LogiSearch gateway listening on loopback port ' + port));
+server.listen(port, host, () => console.log('LogiSearch gateway listening on ' + host + ':' + port));
 for (const signal of ['SIGINT', 'SIGTERM']) process.once(signal, () => server.close(() => process.exit(0)));
