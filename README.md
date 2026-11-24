@@ -31,11 +31,11 @@
 
 ```bash
 # Clonar el repositorio
-git clone <url-del-repo>
-cd BUSCADOR
+git clone https://github.com/manu-alvarez/LogiSearch.git
+cd LogiSearch
 
 # Instalar dependencias
-npm install
+npm ci
 
 # Configurar variables de entorno
 cp .env.example .env
@@ -53,7 +53,7 @@ VITE_TAVILY_API_KEY=tu-tavily-key
 VITE_GEMINI_API_KEY=tu-gemini-key
 ```
 
-> ⚠️ **Nunca** incluyas la service key de Supabase en el frontend.
+> ⚠️ **Nunca** incluyas la service key de Supabase en el frontend. Las claves Gemini y Tavily configuradas aquí quedan expuestas al navegador; no publicar builds que las contengan.
 
 ## 🚀 Desarrollo
 
@@ -62,7 +62,7 @@ VITE_GEMINI_API_KEY=tu-gemini-key
 npm run dev
 
 # Verificar tipos
-npx tsc --noEmit
+npx tsc -b
 
 # Build de producción
 npm run build
@@ -92,10 +92,10 @@ src/
 
 ## 🔒 Seguridad
 
-- API keys en variables de entorno (`import.meta.env.VITE_*`)
+- Las variables `VITE_*` se incorporan al JavaScript público. Las claves privadas de Gemini y Tavily no deben utilizarse en un despliegue público; requieren un backend autenticado con límites de uso. La integración actual solo debe usarse en un entorno local de confianza con credenciales propias y restringidas.
 - Sin service keys en el frontend
-- Supabase Row Level Security (RLS)
-- Sin datos sensibles en el código fuente
+- Supabase: verificar las políticas Row Level Security (RLS) en el proyecto desplegado.
+- No incluir secretos en código, archivos de entorno versionados ni artefactos publicados.
 
 ## 📋 Normativa Soportada
 
@@ -110,4 +110,4 @@ src/
 
 ## 📄 Licencia
 
-Proyecto privado — Todos los derechos reservados © 2026
+Repositorio público — Todos los derechos reservados © 2026

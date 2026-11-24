@@ -26,3 +26,8 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Generated development PWA artifacts and release archive
+/dev-dist/
+/dist.tar.gz
+!.env.example
