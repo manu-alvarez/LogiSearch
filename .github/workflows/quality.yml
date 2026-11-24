@@ -3,7 +3,7 @@ on:
   pull_request:
     branches: [main]
   push:
-    branches: [main]
+    branches: [main, security/server-side-provider-gateway]
 permissions:
   contents: read
 jobs:
@@ -18,3 +18,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
+      - run: node --test tests/providers.test.mjs
