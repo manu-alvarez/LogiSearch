@@ -18,4 +18,4 @@ jobs:
           cache: npm
       - run: npm ci
       - run: npm run build
-      - run: node --test tests/providers.test.mjs
+      - run: node --test tests/*.test.mjs
